@@ -2,11 +2,12 @@ package auth
 
 import (
 	"context"
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/qiangxue/go-rest-api/internal/entity"
 	"github.com/qiangxue/go-rest-api/internal/errors"
 	"github.com/qiangxue/go-rest-api/pkg/log"
-	"time"
 )
 
 // Service encapsulates the authentication logic.
@@ -49,7 +50,6 @@ func (s service) Login(ctx context.Context, username, password string) (string, 
 func (s service) authenticate(ctx context.Context, username, password string) Identity {
 	logger := s.logger.With(ctx, "user", username)
 
-	// TODO: the following authentication logic is only for demo purpose
 	if username == "demo" && password == "pass" {
 		logger.Infof("authentication successful")
 		return entity.User{ID: "100", Name: "demo"}

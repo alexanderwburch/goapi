@@ -5,22 +5,25 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/go-ozzo/ozzo-dbx"
 	"github.com/go-ozzo/ozzo-routing/v2"
 	"github.com/go-ozzo/ozzo-routing/v2/content"
 	"github.com/go-ozzo/ozzo-routing/v2/cors"
 	_ "github.com/lib/pq"
+	"github.com/qiangxue/go-rest-api/internal/account"
 	"github.com/qiangxue/go-rest-api/internal/album"
 	"github.com/qiangxue/go-rest-api/internal/auth"
 	"github.com/qiangxue/go-rest-api/internal/config"
+	"github.com/qiangxue/go-rest-api/internal/domain"
 	"github.com/qiangxue/go-rest-api/internal/errors"
 	"github.com/qiangxue/go-rest-api/internal/healthcheck"
 	"github.com/qiangxue/go-rest-api/pkg/accesslog"
 	"github.com/qiangxue/go-rest-api/pkg/dbcontext"
 	"github.com/qiangxue/go-rest-api/pkg/log"
-	"net/http"
-	"os"
-	"time"
 )
 
 // Version indicates the current version of the application.
@@ -89,6 +92,16 @@ func buildHandler(logger log.Logger, db *dbcontext.DB, cfg *config.Config) http.
 
 	album.RegisterHandlers(rg.Group(""),
 		album.NewService(album.NewRepository(db, logger), logger),
+		authHandler, logger,
+	)
+
+	account.RegisterHandlers(rg.Group(""),
+		account.NewService(account.NewRepository(db, logger), logger),
+		authHandler, logger,
+	)
+
+	domain.RegisterHandlers(rg.Group(""),
+		domain.NewService(domain.NewRepository(db, logger), logger),
 		authHandler, logger,
 	)
 
