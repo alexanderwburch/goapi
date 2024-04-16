@@ -2,6 +2,7 @@ package domain
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/go-ozzo/ozzo-routing/v2"
 	"github.com/qiangxue/go-rest-api/internal/errors"
@@ -30,7 +31,9 @@ type resource struct {
 }
 
 func (r resource) get(c *routing.Context) error {
-	domain, err := r.service.Get(c.Request.Context(), c.Param("id"))
+	domainId, err := strconv.Atoi(c.Param("id"))
+	accountId, err := strconv.Atoi(c.Param("account_id"))
+	domain, err := r.service.Get(c.Request.Context(), domainId, accountId)
 	if err != nil {
 		return err
 	}
@@ -40,12 +43,13 @@ func (r resource) get(c *routing.Context) error {
 
 func (r resource) query(c *routing.Context) error {
 	ctx := c.Request.Context()
-	count, err := r.service.Count(ctx)
+	accountId, err := strconv.Atoi(c.Query("account_id"))
+	count, err := r.service.Count(ctx, accountId)
 	if err != nil {
 		return err
 	}
 	pages := pagination.NewFromRequest(c.Request, count)
-	domains, err := r.service.Query(ctx, pages.Offset(), pages.Limit())
+	domains, err := r.service.Query(ctx, pages.Offset(), pages.Limit(), accountId)
 	if err != nil {
 		return err
 	}
@@ -74,7 +78,8 @@ func (r resource) update(c *routing.Context) error {
 		return errors.BadRequest("")
 	}
 
-	domain, err := r.service.Update(c.Request.Context(), c.Param("id"), input)
+	domainId, err := strconv.Atoi(c.Param("id"))
+	domain, err := r.service.Update(c.Request.Context(), domainId, input)
 	if err != nil {
 		return err
 	}
@@ -83,7 +88,9 @@ func (r resource) update(c *routing.Context) error {
 }
 
 func (r resource) delete(c *routing.Context) error {
-	domain, err := r.service.Delete(c.Request.Context(), c.Param("id"))
+	domainId, err := strconv.Atoi(c.Param("id"))
+	accountId, err := strconv.Atoi(c.Param("account_id"))
+	domain, err := r.service.Delete(c.Request.Context(), domainId, accountId)
 	if err != nil {
 		return err
 	}

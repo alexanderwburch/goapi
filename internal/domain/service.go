@@ -11,12 +11,12 @@ import (
 
 // Service encapsulates usecase logic for Domains.
 type Service interface {
-	Get(ctx context.Context, id string) (Domain, error)
-	Query(ctx context.Context, offset, limit int) ([]Domain, error)
-	Count(ctx context.Context) (int, error)
+	Get(ctx context.Context, id int, accountId int) (Domain, error)
+	Query(ctx context.Context, offset, limit int, accountId int) ([]Domain, error)
+	Count(ctx context.Context, accountId int) (int, error)
 	Create(ctx context.Context, input CreateDomainRequest) (Domain, error)
-	Update(ctx context.Context, id string, input UpdateDomainRequest) (Domain, error)
-	Delete(ctx context.Context, id string) (Domain, error)
+	Update(ctx context.Context, id int, input UpdateDomainRequest) (Domain, error)
+	Delete(ctx context.Context, id int, accountId int) (Domain, error)
 }
 
 // Domain represents the data about an Domain.
@@ -27,20 +27,21 @@ type Domain struct {
 // CreateDomainRequest represents an Domain creation request.
 type CreateDomainRequest struct {
 	Name      string `json:"name"`
-	AccountId string `json:"account_id"`
+	AccountId int    `json:"account_id"`
 }
 
 // Validate validates the CreateDomainRequest fields.
 func (m CreateDomainRequest) Validate() error {
 	return validation.ValidateStruct(&m,
 		validation.Field(&m.Name, validation.Required, validation.Length(0, 128)),
-		validation.Field(&m.AccountId, validation.Required, validation.Length(0, 128)),
+		validation.Field(&m.AccountId, validation.Required, validation.Min(0)),
 	)
 }
 
 // UpdateDomainRequest represents an Domain update request.
 type UpdateDomainRequest struct {
-	Name string `json:"name"`
+	Name      string `json:"name"`
+	AccountId int    `json:"account_id"`
 }
 
 // Validate validates the CreateDomainRequest fields.
@@ -61,8 +62,8 @@ func NewService(repo Repository, logger log.Logger) Service {
 }
 
 // Get returns the Domain with the specified the Domain ID.
-func (s service) Get(ctx context.Context, id string) (Domain, error) {
-	domain, err := s.repo.Get(ctx, id)
+func (s service) Get(ctx context.Context, id int, accountId int) (Domain, error) {
+	domain, err := s.repo.Get(ctx, id, accountId)
 	if err != nil {
 		return Domain{}, err
 	}
@@ -74,27 +75,26 @@ func (s service) Create(ctx context.Context, req CreateDomainRequest) (Domain, e
 	if err := req.Validate(); err != nil {
 		return Domain{}, err
 	}
-	id := entity.GenerateID()
 	now := time.Now()
-	err := s.repo.Create(ctx, entity.Domain{
-		ID:        id,
+	domain, err := s.repo.Create(ctx, entity.Domain{
 		Domain:    req.Name,
+		AccountId: req.AccountId,
 		CreatedAt: now,
 		UpdatedAt: now,
 	})
 	if err != nil {
 		return Domain{}, err
 	}
-	return s.Get(ctx, id)
+	return s.Get(ctx, domain.ID, domain.AccountId)
 }
 
 // Update updates the Domain with the specified ID.
-func (s service) Update(ctx context.Context, id string, req UpdateDomainRequest) (Domain, error) {
+func (s service) Update(ctx context.Context, id int, req UpdateDomainRequest) (Domain, error) {
 	if err := req.Validate(); err != nil {
 		return Domain{}, err
 	}
 
-	Domain, err := s.Get(ctx, id)
+	Domain, err := s.Get(ctx, id, req.AccountId)
 	if err != nil {
 		return Domain, err
 	}
@@ -108,25 +108,25 @@ func (s service) Update(ctx context.Context, id string, req UpdateDomainRequest)
 }
 
 // Delete deletes the Domain with the specified ID.
-func (s service) Delete(ctx context.Context, id string) (Domain, error) {
-	domain, err := s.Get(ctx, id)
+func (s service) Delete(ctx context.Context, id int, accountId int) (Domain, error) {
+	domain, err := s.Get(ctx, id, accountId)
 	if err != nil {
 		return Domain{}, err
 	}
-	if err = s.repo.Delete(ctx, id); err != nil {
+	if err = s.repo.Delete(ctx, id, accountId); err != nil {
 		return Domain{}, err
 	}
 	return domain, nil
 }
 
 // Count returns the number of Domains.
-func (s service) Count(ctx context.Context) (int, error) {
-	return s.repo.Count(ctx)
+func (s service) Count(ctx context.Context, accountId int) (int, error) {
+	return s.repo.Count(ctx, accountId)
 }
 
 // Query returns the Domains with the specified offset and limit.
-func (s service) Query(ctx context.Context, offset, limit int) ([]Domain, error) {
-	items, err := s.repo.Query(ctx, offset, limit)
+func (s service) Query(ctx context.Context, offset, limit int, accountId int) ([]Domain, error) {
+	items, err := s.repo.Query(ctx, offset, limit, accountId)
 	if err != nil {
 		return nil, err
 	}

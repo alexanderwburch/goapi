@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 
+	dbx "github.com/go-ozzo/ozzo-dbx"
 	"github.com/qiangxue/go-rest-api/internal/entity"
 	"github.com/qiangxue/go-rest-api/pkg/dbcontext"
 	"github.com/qiangxue/go-rest-api/pkg/log"
@@ -11,17 +12,17 @@ import (
 // Repository encapsulates the logic to access domains from the data source.
 type Repository interface {
 	// Get returns the domain with the specified domain ID.
-	Get(ctx context.Context, id string) (entity.Domain, error)
+	Get(ctx context.Context, id int, accountId int) (entity.Domain, error)
 	// Count returns the number of domains.
-	Count(ctx context.Context) (int, error)
+	Count(ctx context.Context, accountId int) (int, error)
 	// Query returns the list of domains with the given offset and limit.
-	Query(ctx context.Context, offset, limit int) ([]entity.Domain, error)
+	Query(ctx context.Context, offset, limit int, accountId int) ([]entity.Domain, error)
 	// Create saves a new domain in the storage.
-	Create(ctx context.Context, domain entity.Domain) error
+	Create(ctx context.Context, domain entity.Domain) (entity.Domain, error)
 	// Update updates the domain with given ID in the storage.
 	Update(ctx context.Context, domain entity.Domain) error
 	// Delete removes the domain with given ID from the storage.
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id int, accountId int) error
 }
 
 // repository persists domains in database
@@ -36,16 +37,19 @@ func NewRepository(db *dbcontext.DB, logger log.Logger) Repository {
 }
 
 // Get reads the domain with the specified ID from the database.
-func (r repository) Get(ctx context.Context, id string) (entity.Domain, error) {
+func (r repository) Get(ctx context.Context, id int, accountId int) (entity.Domain, error) {
 	var domain entity.Domain
-	err := r.db.With(ctx).Select().Model(id, &domain)
+	print("Account ID is " + string(accountId))
+	err := r.db.With(ctx).Select().
+		Where(dbx.HashExp{"account_id": accountId}).
+		OrWhere(dbx.HashExp{"id": id}).All(&domain)
 	return domain, err
 }
 
 // Create saves a new domain record in the database.
 // It returns the ID of the newly inserted domain record.
-func (r repository) Create(ctx context.Context, domain entity.Domain) error {
-	return r.db.With(ctx).Model(&domain).Insert()
+func (r repository) Create(ctx context.Context, domain entity.Domain) (entity.Domain, error) {
+	return domain, r.db.With(ctx).Model(&domain).Insert()
 }
 
 // Update saves the changes to an domain in the database.
@@ -54,8 +58,8 @@ func (r repository) Update(ctx context.Context, domain entity.Domain) error {
 }
 
 // Delete deletes an domain with the specified ID from the database.
-func (r repository) Delete(ctx context.Context, id string) error {
-	domain, err := r.Get(ctx, id)
+func (r repository) Delete(ctx context.Context, id int, accountId int) error {
+	domain, err := r.Get(ctx, id, accountId)
 	if err != nil {
 		return err
 	}
@@ -63,17 +67,18 @@ func (r repository) Delete(ctx context.Context, id string) error {
 }
 
 // Count returns the number of the domain records in the database.
-func (r repository) Count(ctx context.Context) (int, error) {
+func (r repository) Count(ctx context.Context, accountId int) (int, error) {
 	var count int
-	err := r.db.With(ctx).Select("COUNT(*)").From("domain").Row(&count)
+	err := r.db.With(ctx).Select("COUNT(*)").From("domain").Where(dbx.HashExp{"account_id": accountId}).Row(&count)
 	return count, err
 }
 
 // Query retrieves the domain records with the specified offset and limit from the database.
-func (r repository) Query(ctx context.Context, offset, limit int) ([]entity.Domain, error) {
+func (r repository) Query(ctx context.Context, offset, limit int, accountId int) ([]entity.Domain, error) {
 	var domains []entity.Domain
 	err := r.db.With(ctx).
 		Select().
+		Where(dbx.HashExp{"account_id": accountId}).
 		OrderBy("id").
 		Offset(int64(offset)).
 		Limit(int64(limit)).

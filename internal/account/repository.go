@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 
+	dbx "github.com/go-ozzo/ozzo-dbx"
 	"github.com/qiangxue/go-rest-api/internal/entity"
 	"github.com/qiangxue/go-rest-api/pkg/dbcontext"
 	"github.com/qiangxue/go-rest-api/pkg/log"
@@ -11,7 +12,7 @@ import (
 // Repository encapsulates the logic to access accounts from the data source.
 type Repository interface {
 	// Get returns the account with the specified account ID.
-	Get(ctx context.Context, id string) (entity.Account, error)
+	Get(ctx context.Context, id int, email string, firebaseId string) (entity.Account, error)
 	// Count returns the number of accounts.
 	Count(ctx context.Context) (int, error)
 	// Query returns the list of accounts with the given offset and limit.
@@ -21,7 +22,7 @@ type Repository interface {
 	// Update updates the account with given ID in the storage.
 	Update(ctx context.Context, account entity.Account) error
 	// Delete removes the account with given ID from the storage.
-	Delete(ctx context.Context, id string) error
+	Delete(ctx context.Context, id int, email string, firebaseId string) error
 }
 
 // repository persists accounts in database
@@ -36,9 +37,9 @@ func NewRepository(db *dbcontext.DB, logger log.Logger) Repository {
 }
 
 // Get reads the account with the specified ID from the database.
-func (r repository) Get(ctx context.Context, id string) (entity.Account, error) {
+func (r repository) Get(ctx context.Context, id int, email string, firebaseId string) (entity.Account, error) {
 	var account entity.Account
-	err := r.db.With(ctx).Select().Model(id, &account)
+	err := r.db.With(ctx).Select().Where(dbx.HashExp{"id": id}).OrWhere(dbx.HashExp{"email": email}).OrWhere(dbx.HashExp{"firebase_id": firebaseId}).One(&account)
 	return account, err
 }
 
@@ -54,8 +55,8 @@ func (r repository) Update(ctx context.Context, account entity.Account) error {
 }
 
 // Delete deletes an account with the specified ID from the database.
-func (r repository) Delete(ctx context.Context, id string) error {
-	account, err := r.Get(ctx, id)
+func (r repository) Delete(ctx context.Context, id int, email string, firebaseId string) error {
+	account, err := r.Get(ctx, id, email, firebaseId)
 	if err != nil {
 		return err
 	}

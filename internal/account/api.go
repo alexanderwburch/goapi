@@ -2,6 +2,7 @@ package account
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/go-ozzo/ozzo-routing/v2"
 	"github.com/qiangxue/go-rest-api/internal/errors"
@@ -30,7 +31,8 @@ type resource struct {
 }
 
 func (r resource) get(c *routing.Context) error {
-	account, err := r.service.Get(c.Request.Context(), c.Param("id"))
+	accountId, err := strconv.Atoi(c.Param("id"))
+	account, err := r.service.Get(c.Request.Context(), accountId, c.Param("email"), c.Param("firebase_id"))
 	if err != nil {
 		return err
 	}
@@ -74,7 +76,8 @@ func (r resource) update(c *routing.Context) error {
 		return errors.BadRequest("")
 	}
 
-	account, err := r.service.Update(c.Request.Context(), c.Param("id"), input)
+	accountId, err := strconv.Atoi(c.Param("id"))
+	account, err := r.service.Update(c.Request.Context(), accountId, c.Param("email"), c.Param("firebase_id"), input)
 	if err != nil {
 		return err
 	}
@@ -83,7 +86,9 @@ func (r resource) update(c *routing.Context) error {
 }
 
 func (r resource) delete(c *routing.Context) error {
-	account, err := r.service.Delete(c.Request.Context(), c.Param("id"))
+
+	accountId, err := strconv.Atoi(c.Param("id"))
+	account, err := r.service.Delete(c.Request.Context(), accountId, c.Param("email"), c.Param("firebase_id"))
 	if err != nil {
 		return err
 	}

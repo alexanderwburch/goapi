@@ -11,12 +11,12 @@ import (
 
 // Service encapsulates usecase logic for Accounts.
 type Service interface {
-	Get(ctx context.Context, id string) (Account, error)
+	Get(ctx context.Context, id int, email string, firebaseId string) (Account, error)
 	Query(ctx context.Context, offset, limit int) ([]Account, error)
 	Count(ctx context.Context) (int, error)
 	Create(ctx context.Context, input CreateAccountRequest) (Account, error)
-	Update(ctx context.Context, id string, input UpdateAccountRequest) (Account, error)
-	Delete(ctx context.Context, id string) (Account, error)
+	Update(ctx context.Context, id int, email string, firebaseId string, input UpdateAccountRequest) (Account, error)
+	Delete(ctx context.Context, id int, email string, firebaseId string) (Account, error)
 }
 
 // Account represents the data about an Account.
@@ -26,13 +26,14 @@ type Account struct {
 
 // CreateAccountRequest represents an Account creation request.
 type CreateAccountRequest struct {
-	Name string `json:"name"`
+	Email      string `json:"email"`
+	FirebaseId string `json:"FirebaseId"`
 }
 
 // Validate validates the CreateAccountRequest fields.
 func (m CreateAccountRequest) Validate() error {
 	return validation.ValidateStruct(&m,
-		validation.Field(&m.Name, validation.Required, validation.Length(0, 128)),
+		validation.Field(&m.Email, validation.Required, validation.Length(0, 128)),
 	)
 }
 
@@ -59,8 +60,8 @@ func NewService(repo Repository, logger log.Logger) Service {
 }
 
 // Get returns the Account with the specified the Account ID.
-func (s service) Get(ctx context.Context, id string) (Account, error) {
-	account, err := s.repo.Get(ctx, id)
+func (s service) Get(ctx context.Context, id int, email string, firebaseId string) (Account, error) {
+	account, err := s.repo.Get(ctx, id, email, firebaseId)
 	if err != nil {
 		return Account{}, err
 	}
@@ -72,27 +73,26 @@ func (s service) Create(ctx context.Context, req CreateAccountRequest) (Account,
 	if err := req.Validate(); err != nil {
 		return Account{}, err
 	}
-	id := entity.GenerateID()
 	now := time.Now()
 	err := s.repo.Create(ctx, entity.Account{
-		ID:        id,
-		Email:     req.Name,
-		CreatedAt: now,
-		UpdatedAt: now,
+		Email:      req.Email,
+		FirebaseId: req.FirebaseId,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	})
 	if err != nil {
 		return Account{}, err
 	}
-	return s.Get(ctx, id)
+	return s.Get(ctx, 0, req.Email, "")
 }
 
 // Update updates the Account with the specified ID.
-func (s service) Update(ctx context.Context, id string, req UpdateAccountRequest) (Account, error) {
+func (s service) Update(ctx context.Context, id int, email string, firebaseId string, req UpdateAccountRequest) (Account, error) {
 	if err := req.Validate(); err != nil {
 		return Account{}, err
 	}
 
-	Account, err := s.Get(ctx, id)
+	Account, err := s.Get(ctx, id, email, firebaseId)
 	if err != nil {
 		return Account, err
 	}
@@ -106,12 +106,12 @@ func (s service) Update(ctx context.Context, id string, req UpdateAccountRequest
 }
 
 // Delete deletes the Account with the specified ID.
-func (s service) Delete(ctx context.Context, id string) (Account, error) {
-	account, err := s.Get(ctx, id)
+func (s service) Delete(ctx context.Context, id int, email string, firebaseId string) (Account, error) {
+	account, err := s.Get(ctx, id, email, firebaseId)
 	if err != nil {
 		return Account{}, err
 	}
-	if err = s.repo.Delete(ctx, id); err != nil {
+	if err = s.repo.Delete(ctx, id, email, firebaseId); err != nil {
 		return Account{}, err
 	}
 	return account, nil

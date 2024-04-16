@@ -5,7 +5,7 @@ import (
 )
 
 type Account struct {
-	ID         string    `json:"id"`
+	ID         int       `json:"id"`
 	Email      string    `json:"email"`
 	FirebaseId string    `json:"firebase_id"`
 	CreatedAt  time.Time `json:"created_at"`
