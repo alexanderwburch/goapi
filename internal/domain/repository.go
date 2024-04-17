@@ -12,7 +12,7 @@ import (
 // Repository encapsulates the logic to access domains from the data source.
 type Repository interface {
 	// Get returns the domain with the specified domain ID.
-	Get(ctx context.Context, id int, accountId int) (entity.Domain, error)
+	Get(ctx context.Context, domain string, accountId int) (entity.Domain, error)
 	// Count returns the number of domains.
 	Count(ctx context.Context, accountId int) (int, error)
 	// Query returns the list of domains with the given offset and limit.
@@ -22,7 +22,7 @@ type Repository interface {
 	// Update updates the domain with given ID in the storage.
 	Update(ctx context.Context, domain entity.Domain) error
 	// Delete removes the domain with given ID from the storage.
-	Delete(ctx context.Context, id int, accountId int) error
+	Delete(ctx context.Context, name string, accountId int) error
 }
 
 // repository persists domains in database
@@ -37,12 +37,12 @@ func NewRepository(db *dbcontext.DB, logger log.Logger) Repository {
 }
 
 // Get reads the domain with the specified ID from the database.
-func (r repository) Get(ctx context.Context, id int, accountId int) (entity.Domain, error) {
+func (r repository) Get(ctx context.Context, name string, accountId int) (entity.Domain, error) {
 	var domain entity.Domain
 	print("Account ID is " + string(accountId))
 	err := r.db.With(ctx).Select().
 		Where(dbx.HashExp{"account_id": accountId}).
-		OrWhere(dbx.HashExp{"id": id}).All(&domain)
+		AndWhere(dbx.HashExp{"domain": name}).One(&domain)
 	return domain, err
 }
 
@@ -58,8 +58,8 @@ func (r repository) Update(ctx context.Context, domain entity.Domain) error {
 }
 
 // Delete deletes an domain with the specified ID from the database.
-func (r repository) Delete(ctx context.Context, id int, accountId int) error {
-	domain, err := r.Get(ctx, id, accountId)
+func (r repository) Delete(ctx context.Context, name string, accountId int) error {
+	domain, err := r.Get(ctx, name, accountId)
 	if err != nil {
 		return err
 	}

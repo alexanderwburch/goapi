@@ -11,12 +11,12 @@ import (
 
 // Service encapsulates usecase logic for Domains.
 type Service interface {
-	Get(ctx context.Context, id int, accountId int) (Domain, error)
+	Get(ctx context.Context, name string, accountId int) (Domain, error)
 	Query(ctx context.Context, offset, limit int, accountId int) ([]Domain, error)
 	Count(ctx context.Context, accountId int) (int, error)
 	Create(ctx context.Context, input CreateDomainRequest) (Domain, error)
-	Update(ctx context.Context, id int, input UpdateDomainRequest) (Domain, error)
-	Delete(ctx context.Context, id int, accountId int) (Domain, error)
+	Update(ctx context.Context, name string, input UpdateDomainRequest) (Domain, error)
+	Delete(ctx context.Context, name string, accountId int) (Domain, error)
 }
 
 // Domain represents the data about an Domain.
@@ -62,8 +62,8 @@ func NewService(repo Repository, logger log.Logger) Service {
 }
 
 // Get returns the Domain with the specified the Domain ID.
-func (s service) Get(ctx context.Context, id int, accountId int) (Domain, error) {
-	domain, err := s.repo.Get(ctx, id, accountId)
+func (s service) Get(ctx context.Context, name string, accountId int) (Domain, error) {
+	domain, err := s.repo.Get(ctx, name, accountId)
 	if err != nil {
 		return Domain{}, err
 	}
@@ -85,16 +85,16 @@ func (s service) Create(ctx context.Context, req CreateDomainRequest) (Domain, e
 	if err != nil {
 		return Domain{}, err
 	}
-	return s.Get(ctx, domain.ID, domain.AccountId)
+	return s.Get(ctx, domain.Domain, domain.AccountId)
 }
 
 // Update updates the Domain with the specified ID.
-func (s service) Update(ctx context.Context, id int, req UpdateDomainRequest) (Domain, error) {
+func (s service) Update(ctx context.Context, name string, req UpdateDomainRequest) (Domain, error) {
 	if err := req.Validate(); err != nil {
 		return Domain{}, err
 	}
 
-	Domain, err := s.Get(ctx, id, req.AccountId)
+	Domain, err := s.Get(ctx, name, req.AccountId)
 	if err != nil {
 		return Domain, err
 	}
@@ -108,12 +108,12 @@ func (s service) Update(ctx context.Context, id int, req UpdateDomainRequest) (D
 }
 
 // Delete deletes the Domain with the specified ID.
-func (s service) Delete(ctx context.Context, id int, accountId int) (Domain, error) {
-	domain, err := s.Get(ctx, id, accountId)
+func (s service) Delete(ctx context.Context, name string, accountId int) (Domain, error) {
+	domain, err := s.Get(ctx, name, accountId)
 	if err != nil {
 		return Domain{}, err
 	}
-	if err = s.repo.Delete(ctx, id, accountId); err != nil {
+	if err = s.repo.Delete(ctx, name, accountId); err != nil {
 		return Domain{}, err
 	}
 	return domain, nil

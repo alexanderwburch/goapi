@@ -31,9 +31,8 @@ type resource struct {
 }
 
 func (r resource) get(c *routing.Context) error {
-	domainId, err := strconv.Atoi(c.Param("id"))
 	accountId, err := strconv.Atoi(c.Param("account_id"))
-	domain, err := r.service.Get(c.Request.Context(), domainId, accountId)
+	domain, err := r.service.Get(c.Request.Context(), c.Param("domain"), accountId)
 	if err != nil {
 		return err
 	}
@@ -78,8 +77,7 @@ func (r resource) update(c *routing.Context) error {
 		return errors.BadRequest("")
 	}
 
-	domainId, err := strconv.Atoi(c.Param("id"))
-	domain, err := r.service.Update(c.Request.Context(), domainId, input)
+	domain, err := r.service.Update(c.Request.Context(), c.Param("domain"), input)
 	if err != nil {
 		return err
 	}
@@ -88,9 +86,8 @@ func (r resource) update(c *routing.Context) error {
 }
 
 func (r resource) delete(c *routing.Context) error {
-	domainId, err := strconv.Atoi(c.Param("id"))
 	accountId, err := strconv.Atoi(c.Param("account_id"))
-	domain, err := r.service.Delete(c.Request.Context(), domainId, accountId)
+	domain, err := r.service.Delete(c.Request.Context(), c.Param("domain"), accountId)
 	if err != nil {
 		return err
 	}

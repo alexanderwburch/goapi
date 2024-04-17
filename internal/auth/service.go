@@ -50,9 +50,9 @@ func (s service) Login(ctx context.Context, username, password string) (string, 
 func (s service) authenticate(ctx context.Context, username, password string) Identity {
 	logger := s.logger.With(ctx, "user", username)
 
-	if username == "demo" && password == "pass" {
+	if username == "winnr-ui" && password == "SWxC7h9YNK2B" {
 		logger.Infof("authentication successful")
-		return entity.User{ID: "100", Name: "demo"}
+		return entity.User{ID: "100", Name: "winnr-ui"}
 	}
 
 	logger.Infof("authentication failed")
