@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -14,7 +15,6 @@ import (
 func RegisterHandlers(r *routing.RouteGroup, service Service, authHandler routing.Handler, logger log.Logger) {
 	res := resource{service, logger}
 
-	r.Get("/domains/<id>", res.get)
 	r.Get("/domains", res.query)
 
 	r.Use(authHandler)
@@ -22,7 +22,7 @@ func RegisterHandlers(r *routing.RouteGroup, service Service, authHandler routin
 	// the following endpoints require a valid JWT
 	r.Post("/domains", res.create)
 	r.Put("/domains/<id>", res.update)
-	r.Delete("/domains/<id>", res.delete)
+	r.Delete("/domains", res.delete)
 }
 
 type resource struct {
@@ -86,8 +86,10 @@ func (r resource) update(c *routing.Context) error {
 }
 
 func (r resource) delete(c *routing.Context) error {
-	accountId, err := strconv.Atoi(c.Param("account_id"))
-	domain, err := r.service.Delete(c.Request.Context(), c.Param("domain"), accountId)
+	accountId, err := strconv.Atoi(c.Query("account_id"))
+	domainParam := c.Query("domain")
+	print(fmt.Sprintf("api.go Deleting domain %s %s", domainParam, c.Query("account_id")))
+	domain, err := r.service.Delete(c.Request.Context(), domainParam, accountId)
 	if err != nil {
 		return err
 	}

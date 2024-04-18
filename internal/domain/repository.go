@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"fmt"
 
 	dbx "github.com/go-ozzo/ozzo-dbx"
 	"github.com/qiangxue/go-rest-api/internal/entity"
@@ -39,7 +40,6 @@ func NewRepository(db *dbcontext.DB, logger log.Logger) Repository {
 // Get reads the domain with the specified ID from the database.
 func (r repository) Get(ctx context.Context, name string, accountId int) (entity.Domain, error) {
 	var domain entity.Domain
-	print("Account ID is " + string(accountId))
 	err := r.db.With(ctx).Select().
 		Where(dbx.HashExp{"account_id": accountId}).
 		AndWhere(dbx.HashExp{"domain": name}).One(&domain)
@@ -59,6 +59,7 @@ func (r repository) Update(ctx context.Context, domain entity.Domain) error {
 
 // Delete deletes an domain with the specified ID from the database.
 func (r repository) Delete(ctx context.Context, name string, accountId int) error {
+	print(fmt.Sprintf("Deleting domain %s %s", name, accountId))
 	domain, err := r.Get(ctx, name, accountId)
 	if err != nil {
 		return err

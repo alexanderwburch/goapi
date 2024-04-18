@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
@@ -36,7 +35,6 @@ const (
 
 // WithUser returns a context that contains the user identity from the given JWT.
 func WithUser(ctx context.Context, id, name string) context.Context {
-	print(fmt.Sprintf("user id %s, name %s\n", id, name))
 	return context.WithValue(ctx, userKey, entity.User{ID: id, Name: name})
 }
 
